@@ -12,6 +12,7 @@ JT: list more packages and come up with a concrete task description. Link synaps
 # Datasets
 We provide you with three datasets which all contain the same channels but feature different interesting biological findings. 
 Each dataset or cube has the dimensions 100 slices x 29 channels x 1080 x 1080. All but the last channel are different markers. The last channel is a instance segmentation mask computed from the DNA1 channel.
+
 Channel Descriptions:
 1. DNA1
 2. PD1
