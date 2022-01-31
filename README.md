@@ -45,3 +45,19 @@ Channel Descriptions:
 27. PDL1_2
 28. PD1_2
 29. Nuclei Segementation Masks
+
+# How to load the data
+you can load the data using the tiffile library in python.
+install it via:
+```
+pip install tiffile
+```
+Loading an image and printing the shape:
+```
+import tiffile
+# tifffile.imread() returns a numpy array 
+image = tifffile.imread("<awesome_name>.tiff")
+print(image.shape)
+
+(z, c, y, x)
+```
