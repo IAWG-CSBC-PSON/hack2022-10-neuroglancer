@@ -49,11 +49,11 @@ Channel Descriptions:
 # How to load the data
 you can load the data using the tiffile library in python.
 install it via:
-```
+```python
 pip install tiffile
 ```
 Loading an image and printing the shape:
-```
+```python
 import tiffile
 # tifffile.imread() returns a numpy array 
 image = tifffile.imread("<awesome_name>.tiff")
