@@ -27,7 +27,7 @@ Here, we provide a list of open-source software tools you might find useful. Fee
 
 # Datasets
 We provide you with three datasets containing the same channels but feature different interesting biological findings. The datasets are available via [Synapse.org](https://www.synapse.org/#!Synapse:syn26848775).
-Each dataset or cube has 100 slices x 29 channels x 1080 x 1080. All but the last channel are different markers, and the last channel is an instance segmentation mask computed from the DNA1 channel.
+Each dataset or cube has 40 slices x 29 channels x 1080 x 1080. All but the last channel are different markers, and the last channel is an instance segmentation mask computed from the DNA1 channel.
 
 Channel Descriptions:
 1. DNA1
