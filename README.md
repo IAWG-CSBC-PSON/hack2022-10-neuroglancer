@@ -7,10 +7,11 @@ Here, we describe some of your tasks in general. The tasks are intentionally ope
 
 **1. Download and read the data**
   * You can download the data [here](https://www.synapse.org/#!Synapse:syn26848775)
+  * each channel is a 3D volume of the same tissue showing different antibody reactions
   * try to load the data using [this code snippet](https://github.com/IAWG-CSBC-PSON/hack2022-10-neuroglancer/blob/main/README.md#how-to-load-the-data)
   
 **2. Visualizing single channels including segmentations**
-  * how do you need to transform the OME-TIFF data format to load it into Neuroglancer
+  * how do you need to transform the OME-TIFF data format to load a single channel and segmentations into Neuroglancer
   * can you convert OME-TIFF files into the [neuroglancer precomputed format](https://github.com/google/neuroglancer/tree/master/src/neuroglancer/datasource/precomputed) with multiresolution volumes and/or meshes
   * is direct [volume rendering](https://en.wikipedia.org/wiki/Volume_rendering) an option? See this [issue](https://github.com/google/neuroglancer/issues/186).
 
