@@ -1,4 +1,4 @@
-####
+#########
 # title: ometiff2neuro.py
 #
 # language: python3
@@ -7,12 +7,24 @@
 # author: viviana kwong, jason lu, dasun madhawa premathilaka, elmar bucher
 #
 # installation:
+#     conda create -n neuro python=3
+#     conda activate neuro
+#     pip install neuroglancer
+#     pip install ipython  # for coding
+#     pip install matplotlib  # for color maps
+#     pip install scikit-image  # for loading images as numpy array and signal thresh
+#     #pip install aicsimageio  # to extract ometiff metadata
+#
+# test dataset:
+#     conda activate neuro
+#     pip install synapseclient  # to download the data from synapse
+#     synapse get -r syn26848775
 #
 # run:
-#
+#     python3 -i ometiff2neuro.py <path/filename.tiff>
 #
 # description:
-#   script to render multi channel multi slice ometiff files into the neuroglancer software. 
+#   script to render multi channel multi slice (ome)tiff files into the neuroglancer software.
 #   + https://docs.openmicroscopy.org/ome-model/latest/
 #   + https://github.com/google/neuroglancer
 #########
@@ -25,7 +37,6 @@ import neuroglancer.cli
 import numpy as np
 from skimage import filters, io
 import sys
-
 
 # functions
 def ometiff2neuro(
@@ -70,7 +81,7 @@ def ometiff2neuro(
     elif len(ls_channel_label) != i_channel:
         sys.exit(f'Error @ ometiff2neuro : ls_channel_label shape (len(ls_channel_label)) does not match channel shape {i_channel}.')
     print(f'ls_channel_label: {ls_channel_label}')
-        
+
     # handle channel color
     if lli_channel_color is None:
         lli_channel_color = []
@@ -97,19 +108,19 @@ def ometiff2neuro(
                 a_channel = a_img[i_n,:,:,:]
             elif i_c == 1:
                 a_channel = a_img[:,i_n,:,:]
-                if di_coor['x'] > i_c: 
+                if di_coor['x'] > i_c:
                     i_x -= 1
-                if di_coor['y'] > i_c: 
+                if di_coor['y'] > i_c:
                     i_y -= 1
-                if di_coor['z'] > i_c: 
+                if di_coor['z'] > i_c:
                     i_z -= 1
             elif i_c == 2:
                 a_channel = a_img[:,:,i_n,:]
-                if di_coor['x'] > i_c: 
+                if di_coor['x'] > i_c:
                     i_x -= 1
-                if di_coor['y'] > i_c: 
+                if di_coor['y'] > i_c:
                     i_y -= 1
-                if di_coor['z'] > i_c: 
+                if di_coor['z'] > i_c:
                     i_z -= 1
             elif i_c == 3:
                 a_channel = a_img[:,:,:,i_n]
