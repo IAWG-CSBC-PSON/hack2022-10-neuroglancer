@@ -4,7 +4,8 @@
 # language: python3
 # date: 2022-02-16
 # license: MIT
-# author: viviana kwong, jason lu, dasun madhawa premathilaka, elmar bucher
+# author: elmar bucher
+# co-author: jason lu, viviana kwong, dasun madhawa premathilaka
 #
 # installation:
 #     conda create -n neuro python=3
@@ -35,7 +36,7 @@ from matplotlib import cm
 import neuroglancer
 import neuroglancer.cli
 import numpy as np
-from skimage import filters, io
+from skimage import exposure, filters, io, util
 import sys
 
 # functions
@@ -51,13 +52,13 @@ def ometiff2neuro(
             'DNA6','SQSTM','VIN','TIM3',
             'DNA7','LAMP1/CD107A','PDL1_2','PD1_2',
             'nuc_segement'
-        ], # None gives hex label
-        lli_channel_color = None,
-        o_cm = cm.turbo,  # color map, used if no color list is None
-        o_thresh = filters.threshold_li,  # None
-        di_coor = {'c':1, 'z':0, 'y':2, 'x':3},
-        di_nm = {'z':40, 'y':10, 'x':10},
-        e_render = {0,'PD1','TLR3','CD3D','PDL1','CD8A','GZMB','VIN',28}   # layer integer or label, None renders all channels if the RAM can handle it.
+        ], # None gives hex label.
+        o_intensity_cm = cm.gray,  # color map, used for intensity. if None, no intensity layer.
+        b_intensity_norm = True,
+        o_thresh = filters.threshold_li,  # set None if segmetation mask data or already threshed values but only then!
+        di_coor = {'c':1, 'z':0, 'y':2, 'x':3}, # dataset dependent. information would be in ometiff metadata.
+        di_nm = {'z':200, 'y':108, 'x':108},  # microscope dependent. information would be in ometiff metadata.
+        e_render = {0, 28}   # layer integer or label, None renders all channels if the RAM can handle it.
     ):
     '''
     docstring goes here.
@@ -68,12 +69,8 @@ def ometiff2neuro(
     a_img =  io.imread(s_pathfile_tiff)
     print(f'image shape ({[m[0] for m in sorted(di_coor.items(), key=lambda n: n[1])]}): {a_img.shape}')
 
-    # handle input
-    i_channel = a_img.shape[di_coor['c']]  # channel count
-
-    # handle e_render
-    if e_render is None:
-        e_render = set(range(i_channel))
+    # channel count
+    i_channel = a_img.shape[di_coor['c']]
 
     # handle channel labels
     if ls_channel_label is None:
@@ -82,17 +79,11 @@ def ometiff2neuro(
         sys.exit(f'Error @ ometiff2neuro : ls_channel_label shape (len(ls_channel_label)) does not match channel shape {i_channel}.')
     print(f'ls_channel_label: {ls_channel_label}')
 
-    # handle channel color
-    if lli_channel_color is None:
-        lli_channel_color = []
-        i_step = int(o_cm.N / i_channel)  # get step size to walk the color map
-        for i_n in range(i_channel):
-            lli_channel_color.append(o_cm(X=i_n*i_step, alpha=None, bytes=True))
-    elif len(lli_channel_color) != i_channel:
-        sys.exit(f'Error @ ometiff2neuro : lli_channel_color shape (len(ls_channel_label)) does not match channel shape {i_channel}.')
-    print(f'lli_channel_color: {lli_channel_color}')
+    # handle render set
+    if e_render is None:
+        e_render = set(range(i_channel))
 
-    # extract informiation and generate neuroglancer layer
+    # generate neuroglancer layer #
     i_c = di_coor['c']
     for i_n in range(i_channel):
         s_label = ls_channel_label[i_n]
@@ -100,7 +91,7 @@ def ometiff2neuro(
         if (i_n in e_render) or (s_label in e_render):
             print(f'rendering channel {i_n}/{i_channel}: {s_label}')
 
-            # coordianet
+            # extract data and coordinate columns
             i_x = di_coor['x']
             i_y = di_coor['y']
             i_z = di_coor['z']
@@ -125,36 +116,30 @@ def ometiff2neuro(
             elif i_c == 3:
                 a_channel = a_img[:,:,:,i_n]
             else:
-                sys.exit(f'Error @ ometiff2neuro : the sorce code is broken. please fix the script.')
+                sys.exit(f'Error @ ometiff2neuro : the source code is broken. please, fix the script.')
 
-            # thresh
+
+            # 3D rendering #
+            # thresh data
+            a_thresh = a_channel.copy()
             if not (o_thresh is None):
-                r_thresh = o_thresh(a_channel)
-                a_channel[a_channel < r_thresh] = 0
+                r_thresh = o_thresh(a_thresh)
+                a_thresh[a_thresh < r_thresh] = 0
+            ab_thresh = a_thresh > 0
 
-            # segment
-            ab_segment = a_channel > 0
-
-            # color
-            a_red = np.zeros(ab_segment.shape, dtype=np.uint8)
-            a_red[ab_segment] = lli_channel_color[i_n][0]
-            a_blue = np.zeros(ab_segment.shape, dtype=np.uint8)
-            a_blue[ab_segment] = lli_channel_color[i_n][1]
-            a_green = np.zeros(ab_segment.shape, dtype=np.uint8)
-            a_green[ab_segment] = lli_channel_color[i_n][2]
-
-            # result
-            a_shape = np.array([a_red, a_blue, a_green])
+            # shape
+            a_shape = np.zeros(ab_thresh.shape, dtype=np.uint32)
+            a_shape[ab_thresh] = i_n + 1
 
             # generate neuroglancer object
-            ls_name = ['c^', None, None, None]
-            ls_name[i_x+1] = 'x'
-            ls_name[i_y+1] = 'y'
-            ls_name[i_z+1] = 'z'
-            li_scale = [3, None, None, None]
-            li_scale[i_x+1] = di_nm['x']
-            li_scale[i_y+1] = di_nm['y']
-            li_scale[i_z+1] = di_nm['z']
+            ls_name = [None, None, None]
+            ls_name[i_x] = 'x'
+            ls_name[i_y] = 'y'
+            ls_name[i_z] = 'z'
+            li_scale = [None, None, None]
+            li_scale[i_x] = di_nm['x']
+            li_scale[i_y] = di_nm['y']
+            li_scale[i_z] = di_nm['z']
             state.layers.append(
                 name = s_label,
                 layer = neuroglancer.LocalVolume(
@@ -163,10 +148,47 @@ def ometiff2neuro(
                         # rgb, x, y, z
                         names = ls_name,
                         scales = li_scale,
-                        units = ['', 'nm', 'nm', 'nm'],
+                        units = ['nm', 'nm', 'nm'],
                     ),
                 ),
-                shader=
+            )
+
+
+            # expression intensity rendering #
+            if not (o_intensity_cm is None):
+
+                # normalize expression values by clip by two sigma and scale over the whole uint range
+                if (b_intensity_norm):
+                    i_min_clip = int(np.percentile(a_channel, 2.5))
+                    i_max_clip = int(np.percentile(a_channel, 97.5))
+                    a_clipped = np.clip(a_channel, a_min=i_min_clip, a_max=i_max_clip)
+                    a_channel = exposure.rescale_intensity(a_clipped, in_range='image')  # 16 or 8[bit] normalized
+
+                # translate intensity by color map
+                a_8bit = util.img_as_ubyte(a_channel)
+                a_intensity = o_intensity_cm(a_8bit, alpha=None, bytes=True)[:,:,:,0:3]
+
+                # generate neuroglancer object
+                ls_name = [None, None, None,'c^']
+                ls_name[i_x] = 'x'
+                ls_name[i_y] = 'y'
+                ls_name[i_z] = 'z'
+                li_scale = [None, None, None, 3]
+                li_scale[i_x] = di_nm['x']
+                li_scale[i_y] = di_nm['y']
+                li_scale[i_z] = di_nm['z']
+                state.layers.append(
+                    name = s_label + '_intensity',
+                    layer = neuroglancer.LocalVolume(
+                        data = a_intensity,
+                        dimensions = neuroglancer.CoordinateSpace(
+                            # rgb, x, y, z
+                            names = ls_name,
+                            scales = li_scale,
+                            units = ['nm', 'nm', 'nm', ''],
+                        ),
+                    ),
+                    shader=
 """
 void main() {
   emitRGB(
