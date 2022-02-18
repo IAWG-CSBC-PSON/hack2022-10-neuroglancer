@@ -4,7 +4,7 @@
 # language: python3
 # date: 2022-02-16
 # license: MIT
-# author: elmar bucherl, jason lu, viviana kwong
+# author: jason lu, viviana kwong, elmar bucher
 #
 # installation:
 #     conda create -n neuro python=3
