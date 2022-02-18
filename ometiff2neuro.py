@@ -7,18 +7,18 @@
 # author: jason lu, viviana kwong, elmar bucher
 #
 # installation:
-#     conda create -n neuro python=3
-#     conda activate neuro
-#     pip install neuroglancer
-#     pip install ipython  # for coding
-#     pip install matplotlib  # for color maps
-#     pip install scikit-image  # for loading images as numpy array and signal thresh
-#     #pip install aicsimageio  # to extract ometiff metadata
+#     conda create -n neuro python=3   # generate an own python environment for to run this code.
+#     conda activate neuro   # activate the generated python environment.
+#     pip install neuroglancer   # the basics
+#     pip install ipython   # for coding
+#     pip install matplotlib   # for expression value color maps
+#     pip install scikit-image   # for loading images as numpy array and signal thresh
+#     #pip install aicsimageio   # for extracting ometiff metadata
 #
 # test dataset:
 #     conda activate neuro
-#     pip install synapseclient  # to download the data from synapse
-#     synapse get -r syn26848775
+#     pip install synapseclient   # for downloading the test dataset from synapse
+#     synapse get -r syn26848775   # download test dataset into the current work directory folder.
 #
 # run:
 #     python3 -i ometiff2neuro.py <path/filename.tiff>
@@ -27,7 +27,9 @@
 #   script to render multi channel multi slice (ome)tiff files into the neuroglancer software.
 #   + https://docs.openmicroscopy.org/ome-model/latest/
 #   + https://github.com/google/neuroglancer
+#   + https://github.com/google/neuroglancer/tree/master/python
 #########
+
 
 # library
 import argparse
@@ -38,44 +40,62 @@ import numpy as np
 from skimage import exposure, filters, io, util
 import sys
 
+
 # functions
 def ometiff2neuro(
         o_state,
         s_pathfile_tiff,
-        ls_channel_label = [
-            'DNA1','PD1','TLR3','SOX10',
-            'DNA2','CD163','CD3D','PDL1',
-            'DNA3','CD4','ICOS','HLADPB1',
-            'DNA4','CD8A','CD68','GZMB',
-            'DNA5','CD40L','LAG3','HLAA',
-            'DNA6','SQSTM','VIN','TIM3',
-            'DNA7','LAMP1/CD107A','PDL1_2','PD1_2',
-            'nuc_segement'
-        ], # None gives hex label.
-        o_intensity_cm = cm.gray,  # color map, used for intensity. if None, no intensity layer.
-        b_intensity_norm = True,
-        o_thresh = filters.threshold_li,  # set None if segmetation mask data or already threshed values but only then!
-        di_coor = {'c':1, 'z':0, 'y':2, 'x':3}, # dataset dependent. information would be in ometiff metadata.
-        di_nm = {'z':200, 'y':108, 'x':108},  # microscope dependent. information would be in ometiff metadata.
-        e_render = {0, 'CD4', 'CD8A', 'GZMB', 28},  # layer integer or label, None renders all channels if the RAM can handle it.
+        ls_channel_label = None, # ['DNA1','PD1','TLR3','SOX10', 'DNA2','CD163','CD3D','PDL1','DNA3','CD4','ICOS','HLADPB1','DNA4','CD8A','CD68','GZMB','DNA5','CD40L','LAG3','HLAA','DNA6','SQSTM','VIN','TIM3', 'DNA7','LAMP1/CD107A','PDL1_2','PD1_2', 'nuc_segement'], # dataset dependent information.
+        o_intensity_cm = cm.gray,  # None
+        b_intensity_norm = True,  # False
+        o_thresh = filters.threshold_li,  # None
+        di_coor = {'c':1, 'z':0, 'y':2, 'x':3},  # dataset dependent information.
+        di_nm = {'z':200, 'y':108, 'x':108},  # microscope dependent information.
+        e_render = None,  # {0, 'CD4', 'CD8A', 'GZMB', 28},
     ):
     '''
     input:
-        o_state:
-        s_pathfile_tiff:
-        ls_channel_label:
-        o_intensity_cm:
-        b_intensity_norm:
-        o_thresh:
-        di_coor:
-        di_nm:
-        e_render:
+        o_state: neuroglancer viewer state object.
+
+        s_pathfile_tiff: file name and path to input tiff file.
+
+        ls_channel_label: list of channel labels.
+            default is None.
+            if None, hexadecimal channel labels will be generated.
+            this is dataset dependent information.
+            in future, if ometiff metadata is provided, this information will be extracted from the ometiff metadata.
+
+        o_intensity_cm: matlab color map object, used to display expression intensity values.
+            default is cm.gray.
+            if None, no intensity layers will be generated.
+
+        b_intensity_norm: boolean.
+            default is True.
+            if True, expression intensity values will be cut by the 2.5 and 97.5 percentiles, to remove outliers,
+                and intensity will be stretched over the whole range.
+
+        o_thresh: skimage.filter thresh method object to threshold non-threshed data.
+            default is filters.threshold_li.
+            this is dataset dependent information.
+            set None if the tiff contains no raw but already threshed or segmentation mask data!
+
+        di_coor: dictionary of integers, to link c,z,y, and x channel to the corresponding tiff (numpy array) columns.
+            this is dataset dependent information.
+            in future, if ometiff metadata is provided, this information will be extracted from the ometiff metadata.
+
+        di_nm: dictionary of integers, to specify z slice distance, and y x pixel size in nanometer.
+            this is microscope dependent information.
+            in future, if ometiff metadata is provided, this information will be extracted from the ometiff metadata.
+
+        e_render: set of channel marker labels and/or integers to specify which markers should be rendered into neurogalncer.
+            default is None.
+            if None, all channels will be rendered into neuroglancer (if enough RAM is available).
 
     output:
-        url
+        local url where the rendered data can be viewed.
 
     description:
-        docstring goes here.
+        function to render multi channel multi slice (ome)tiff files into the neuroglancer software.
     '''
     print(f'\nprocessing: {s_pathfile_tiff}')
 
@@ -93,11 +113,11 @@ def ometiff2neuro(
         sys.exit(f'Error @ ometiff2neuro : ls_channel_label shape (len(ls_channel_label)) does not match channel shape {i_channel}.')
     print(f'ls_channel_label: {ls_channel_label}')
 
-    # handle render set
+    # handle set with labels from channels that will be rendered
     if e_render is None:
         e_render = set(range(i_channel))
 
-    # generate neuroglancer layer #
+    # generate neuroglancer layers #
     i_c = di_coor['c']
     for i_n in range(i_channel):
         s_label = ls_channel_label[i_n]
@@ -105,7 +125,7 @@ def ometiff2neuro(
         if (i_n in e_render) or (s_label in e_render):
             print(f'rendering channel {i_n}/{i_channel}: {s_label}')
 
-            # extract data and coordinate columns
+            # extract data and xyz coordinate columns
             i_x = di_coor['x']
             i_y = di_coor['y']
             i_z = di_coor['z']
@@ -215,7 +235,7 @@ void main() {
             )
 
 
-# run the code
+# run the code from the command line
 if __name__ == '__main__':
     o_parser = argparse.ArgumentParser(description='Script to render ome.tiff files into the neuroglancer software.')
     # request path to ometiff and file name as command line argument
