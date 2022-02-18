@@ -4,8 +4,7 @@
 # language: python3
 # date: 2022-02-16
 # license: MIT
-# author: elmar bucher
-# co-author: jason lu, viviana kwong, dasun madhawa premathilaka
+# author: elmar bucherl, jason lu, viviana kwong
 #
 # installation:
 #     conda create -n neuro python=3
@@ -58,10 +57,25 @@ def ometiff2neuro(
         o_thresh = filters.threshold_li,  # set None if segmetation mask data or already threshed values but only then!
         di_coor = {'c':1, 'z':0, 'y':2, 'x':3}, # dataset dependent. information would be in ometiff metadata.
         di_nm = {'z':200, 'y':108, 'x':108},  # microscope dependent. information would be in ometiff metadata.
-        e_render = {0, 28}   # layer integer or label, None renders all channels if the RAM can handle it.
+        e_render = {0, 'CD4', 'CD8A', 'GZMB', 28},  # layer integer or label, None renders all channels if the RAM can handle it.
     ):
     '''
-    docstring goes here.
+    input:
+        o_state:
+        s_pathfile_tiff:
+        ls_channel_label:
+        o_intensity_cm:
+        b_intensity_norm:
+        o_thresh:
+        di_coor:
+        di_nm:
+        e_render:
+
+    output:
+        url
+
+    description:
+        docstring goes here.
     '''
     print(f'\nprocessing: {s_pathfile_tiff}')
 
