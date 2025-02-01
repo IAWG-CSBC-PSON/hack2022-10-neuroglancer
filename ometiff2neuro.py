@@ -24,8 +24,20 @@
 #     python3 -i ometiff2neuro.py <path/filename.tiff>
 #
 # description:
-#   script to render multi channel multi slice (ome)tiff files into the neuroglancer software.
-#   + https://docs.openmicroscopy.org/ome-model/latest/
+#   script to render multi channel multi slice (ome)tiff files into the
+#   neuroglancer software.
+#
+#   the script here makes use of the neuroglancer python library and is based
+#   on the neuroglancer/python/examples/example.py code.
+#   with this script, it is possible to load three-dimensional single
+#   time step ome-tiff files straight into the neuroglancer software.
+#   for each channel, mesh generation, rendering, and expression intensity
+#   coloring is done on the fly.
+#   channels can be viewed together or alone by toggling them on or off in
+#   the neuroglancer user interface.
+#
+# references:
+#   + https://www.openmicroscopy.org/ome-files/
 #   + https://github.com/google/neuroglancer
 #   + https://github.com/google/neuroglancer/tree/master/python
 #########
